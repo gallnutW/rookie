@@ -1,15 +1,18 @@
 from multiprocessing import Process, Pool
-import os, time, random, subprocess
+import os, time, random, subprocess,platform
+my_platform = platform.system()
 
-# print('Process (%s) start...' % os.getpid())
-# # Only works on Unix/Linux/macOS:
-# # fork()调用一次，返回两次，因为操作系统自动把当前进程（称为父进程）复制了一份（称为子进程）
-# # 然后，分别在父进程和子进程内分别返回
-# pid = os.fork()
-# if pid == 0:
-#     print('I am child process (%s) and my parent is %s.' % (os.getpid(), os.getppid()))
-# else:
-#     print('I (%s) just created a child process (%s).' % (os.getpid(), pid))
+# Only works on Unix/Linux/macOS（3.8之后，Windows和Mac创建子进程的方式都改成了spawn，而不是fork）:
+# fork()调用一次，返回两次，因为操作系统自动把当前进程（称为父进程）复制了一份（称为子进程）
+# 然后，分别在父进程和子进程内分别返回
+if my_platform == 'Darwin':
+    print('Process (%s) start...' % os.getpid())
+
+    pid = os.fork()
+    if pid == 0:
+        print('I am child process (%s) and my parent is %s.' % (os.getpid(), os.getppid()))
+    else:
+        print('I (%s) just created a child process (%s).' % (os.getpid(), pid))
 
 # 子进程要执行的代码
 def run_proc(name):
@@ -37,24 +40,40 @@ if __name__=='__main__':
 
 
     # 使用进程池的方式批量创建子进程
+    # apply_async异步提交一个任务给 进程池
     p = Pool(processes=4)
     for i in range(5):
         p.apply_async(long_time_task, args=(i,))
-    p.close() # 调用 close之后，就不能再继续添加新的 Process了
+    p.close() # 调用 close之后，不能再提交新任务，已经提交的任务继续执行
     p.join() # 等待所有子进程执行完毕
     print('Child process end.')
     print('-'*75)
 
-    # 使用subprocess启动子进程，然后控制其输入输出
-    print('执行命令：$ nslookup www.python.org')
-    r = subprocess.call(['nslookup', 'www.python.org'])
-    print(type(r))
-    print('Exit code:', r)
+    # 使用subprocess启动子进程，然后控制其输入输出，注意不同系统上的编码问题
+    print('执行命令：nslookup www.python.org')
+    if my_platform == 'Windows':
+        result = subprocess.run(
+            ['nslookup', 'www.python.org'],
+            capture_output=True,
+            encoding='gbk'
+        )
+        print(result.stdout)
+    elif my_platform == 'Darwin':
+        r = subprocess.call(['nslookup', 'www.python.org'])
+        print(type(r))
+        print('Exit code:', r)
+    else:
+        print("Other systems?")
+
     print('-'*75)
 
     # 如果子进程还需要输入，则可以通过communicate()方法输入：
     print('$ nslookup')
     p = subprocess.Popen(['nslookup'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, err = p.communicate(b'set q=mx\npython.org\nexit\n')
-    print(output.decode('utf-8'))
+    if my_platform == 'Windows':
+        text_output = output.decode('gbk', errors='replace')
+    else:
+        text_output = output.decode('utf-8', errors='replace')
+    print(text_output)
     print('Exit code:', p.returncode)
