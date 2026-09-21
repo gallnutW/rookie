@@ -10,6 +10,8 @@ from pydantic_ai.providers.deepseek import DeepSeekProvider
 from .hooks import hooks
 from .tools import TOOLS
 
+from dotenv import load_dotenv
+load_dotenv()
 # 从环境变量读取 API Key
 API_KEY = os.environ.get("API_KEY")
 if not API_KEY:
