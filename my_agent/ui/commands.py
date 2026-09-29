@@ -40,7 +40,8 @@ class SessionState:
 class Command:
     name: str
     description: str
-    # handler 返回 False 表示主循环应当退出
+    # handler 返回 False 表示主循环应当退出，
+    # 只有/exit 即cmd_exit()才会返回 False
     handler: Callable[["SessionState"], bool]
 
 

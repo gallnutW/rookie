@@ -22,7 +22,7 @@ class ApiCall:
     # 这次发送给模型的 messages 中最后一条消息的最后一个 part
     last_part: Any
     tools: list
-    # response 侧（after hook 填充）
+    # response 侧（after hook 填充）,先给个零作为占位符
     finish_reason: str = ""
     parts_kinds: list = field(default_factory=list)
     input_tokens: int = 0

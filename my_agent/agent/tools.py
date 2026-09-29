@@ -7,6 +7,8 @@ import subprocess
 def read_file(path: str) -> str:
     """
     读取指定文件的内容。
+    Args:
+        path:要读取的文件的相对或绝对路径.
     """
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -18,6 +20,9 @@ def read_file(path: str) -> str:
 def write_file(path: str, content: str) -> str:
     """
     将内容写入指定文件。
+    Args:
+        path:被写入的文件的绝对路径或相对路径
+        content:写入文件的实际内容
     """
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -27,6 +32,9 @@ def write_file(path: str, content: str) -> str:
 def run_command(command: str) -> str:
     """
     执行一条 shell 命令并返回输出。
+
+    Args:
+        command:要执行的实际命令
     """
     try:
         result = subprocess.run(

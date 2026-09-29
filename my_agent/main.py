@@ -16,11 +16,12 @@ prompt_session = PromptSession()
 
 def read_user_input():
     """
-    打印上横线并读一行用户输入；回车后再补一条下横线，让输入在滚动历史里保持上下边界。返回 None 表示用户希望退出（Ctrl-C / Ctrl-D）。
+    打印上横线并读一行用户输入；回车后再补一条下横线，让输入在滚动历史里保持上下边界。
+    返回 None 表示用户希望退出（Ctrl-C / Ctrl-D）。
     """
     print_divider()
     try:
-        user_input = prompt_session.prompt("❯ ").strip()
+        user_input = prompt_session.prompt("Q: ").strip()
     except (EOFError, KeyboardInterrupt):
         print()
         return None
@@ -42,6 +43,7 @@ def handle_command(user_input, state):
     if command is None:
         console.print(f"未知命令：/{cmd_name}，输入 /help 查看可用命令\n")
         return "continue"
+    # 只有 exit 指令才会返回 false，即 return break
     return "continue" if command.handler(state) else "break"
 
 
@@ -50,7 +52,7 @@ def apply_result(state, result):
     跑完一轮 Agent 后，把结果同步到 SessionState 并显示新增的中间过程。
     """
     state.history = result.all_messages()
-    usage = result.usage()
+    usage = result.usage
     state.input_tokens += usage.input_tokens
     state.output_tokens += usage.output_tokens
     state.last_api_calls = list(api_call_log)
@@ -76,6 +78,7 @@ def main():
             break
         if action == "continue":
             continue
+        # if action == "pass", 说明输入的不是/命令，而是prompt
 
         # 核心 Agent 循环：清空收集 buffer，跑一轮，把结果应用到 state
         api_call_log.clear()
