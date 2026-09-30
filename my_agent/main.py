@@ -1,3 +1,6 @@
+import asyncio
+from pydantic_ai import Agent
+from pydantic_graph import End
 from prompt_toolkit import PromptSession
 
 from agent import agent, MODEL_NAME, api_call_log
@@ -7,8 +10,10 @@ from ui.commands import (
     console,
     print_agent_steps,
     print_divider,
+    print_part,
     print_welcome_banner,
 )
+
 
 # PromptSession 比内置 input() 好用：支持左右移动光标编辑，还会记住本次运行的输入历史，上下方向键可以翻
 prompt_session = PromptSession()
@@ -59,8 +64,27 @@ def apply_result(state, result):
     # result.new_messages() 直接拿到这一轮新增的 message，不需要手动算偏移
     print_agent_steps(result.new_messages())
 
+# Agent-Loop 的执行流程（将 Agent-Loop 看成一个迭代器来理解（有限状态机））
+# 当前一共有四个节点，但主要循环是 is_call_tools 和 is_model_request
+async def run_agent_loop(user_input, state):
+    api_call_log.clear()
 
-def main():
+    async with agent.iter(user_input, message_history=state.history) as run:
+        node = run.next_node
+
+        while not isinstance(node, End):
+            node = await run.next(node)
+
+            if Agent.is_call_tools_node(node):
+                for part in node.model_response.parts:
+                    print_part(part)
+
+            elif Agent.is_model_request_node(node):
+                for part in node.request.parts:
+                    if part.part_kind == "tool-return":
+                        print_part(part)
+
+async def main_async():
     state = SessionState(model_name=MODEL_NAME)
     print_welcome_banner("Coding Agent")
 
@@ -81,10 +105,8 @@ def main():
         # if action == "pass", 说明输入的不是/命令，而是prompt
 
         # 核心 Agent 循环：清空收集 buffer，跑一轮，把结果应用到 state
-        api_call_log.clear()
-        result = agent.run_sync(user_input, message_history=state.history)
-        apply_result(state, result)
+        await run_agent_loop(user_input, state)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main_async())
