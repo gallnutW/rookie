@@ -13,6 +13,7 @@ from ui.commands import (
     print_part,
     print_welcome_banner,
 )
+NODE_PATH = []
 
 
 # PromptSession 比内置 input() 好用：支持左右移动光标编辑，还会记住本次运行的输入历史，上下方向键可以翻
@@ -74,6 +75,7 @@ async def run_agent_loop(user_input, state):
 
         while not isinstance(node, End):
             node = await run.next(node)
+            NODE_PATH.append(node)
 
             if Agent.is_call_tools_node(node):
                 for part in node.model_response.parts:
@@ -84,7 +86,7 @@ async def run_agent_loop(user_input, state):
                     if part.part_kind == "tool-return":
                         print_part(part)
 
-async def main_async():
+def main():
     state = SessionState(model_name=MODEL_NAME)
     print_welcome_banner("Coding Agent")
 
@@ -105,8 +107,10 @@ async def main_async():
         # if action == "pass", 说明输入的不是/命令，而是prompt
 
         # 核心 Agent 循环：清空收集 buffer，跑一轮，把结果应用到 state
-        await run_agent_loop(user_input, state)
+        asyncio.run(run_agent_loop(user_input, state))
 
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
+    main()
+    for _node in NODE_PATH:
+        print(_node.__class__.__name__)
