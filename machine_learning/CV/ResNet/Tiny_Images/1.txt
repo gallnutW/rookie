@@ -1,3 +1,7 @@
 在这个文件夹下安装数据集
 curl -L -O http://cs231n.stanford.edu/tiny-imagenet-200.zip
 unzip tiny-imagenet-200.zip
+
+# windows
+Start-BitsTransfer -Source "http://cs231n.stanford.edu/tiny-imagenet-200.zip" -Destination "tiny-imagenet-200.zip"
+tar -xf .\tiny-imagenet-200.zip
